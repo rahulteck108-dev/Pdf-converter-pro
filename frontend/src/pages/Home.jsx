@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Layers, SplitSquareHorizontal, Image as ImageIcon, Type, RotateCw, PenTool, FileOutput } from 'lucide-react';
+import { Layers, SplitSquareHorizontal, Image as ImageIcon, Type, RotateCw, PenTool, FileOutput, Sparkles } from 'lucide-react';
 
 const Home = () => {
   const tools = [
@@ -51,6 +51,14 @@ const Home = () => {
       icon: <FileOutput className="w-8 h-8 text-blue-500" />,
       path: '/word-to-pdf',
       color: 'bg-blue-50 hover:bg-blue-100 border-blue-100'
+    },
+    {
+      name: 'AI Summarizer',
+      description: 'Quickly generate concise summaries from articles, paragraphs, and essays in seconds.',
+      icon: <Sparkles className="w-8 h-8 text-purple-500" />,
+      path: '/summarize',
+      color: 'bg-purple-50 hover:bg-purple-100 border-purple-100',
+      badge: 'New!'
     }
   ];
 
@@ -61,7 +69,12 @@ const Home = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tools.map((tool) => (
-          <Link to={tool.path} state={{ valid: true }} key={tool.name} className={`flex flex-col items-center p-8 rounded-2xl border transition-all transform hover:-translate-y-1 ${tool.color}`}>
+          <Link to={tool.path} state={{ valid: true }} key={tool.name} className={`relative flex flex-col items-center p-8 rounded-2xl border transition-all transform hover:-translate-y-1 ${tool.color}`}>
+            {tool.badge && (
+              <span className="absolute top-4 right-4 bg-blue-100 text-blue-600 text-xs font-bold px-2 py-1 rounded-md uppercase tracking-wider shadow-sm">
+                {tool.badge}
+              </span>
+            )}
             <div className="mb-4 bg-white p-4 rounded-full shadow-sm">{tool.icon}</div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">{tool.name}</h3>
             <p className="text-gray-600 text-sm text-center">{tool.description}</p>
