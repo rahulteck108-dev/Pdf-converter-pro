@@ -9,6 +9,7 @@ import ExtractText from './pages/ExtractText';
 import RotatePdf from './pages/RotatePdf';
 import WatermarkPdf from './pages/WatermarkPdf';
 import WordToPdf from './pages/WordToPdf';
+import SummarizePdf from './pages/SummarizePdf';
 
 function RootRedirector() {
   const [shouldRedirect, setShouldRedirect] = useState(true);
@@ -39,6 +40,7 @@ function App() {
             <Route path="/rotate" element={<RotatePdf />} />
             <Route path="/watermark" element={<WatermarkPdf />} />
             <Route path="/word-to-pdf" element={<WordToPdf />} />
+            <Route path="/summarize" element={<SummarizePdf />} />
           </Routes>
         </main>
       </div>

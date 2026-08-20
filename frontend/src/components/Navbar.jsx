@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FileText, SplitSquareHorizontal, Layers, Image as ImageIcon, Type, RotateCw, PenTool, FileOutput } from 'lucide-react';
+import { FileText, SplitSquareHorizontal, Layers, Image as ImageIcon, Type, RotateCw, PenTool, FileOutput, Sparkles } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
@@ -44,6 +44,10 @@ const Navbar = () => {
             <Link to="/word-to-pdf" state={{ valid: true }} className={`flex items-center space-x-1 transition ${isActive('/word-to-pdf')}`}>
               <FileOutput className="w-4 h-4" />
               <span>Word to PDF</span>
+            </Link>
+            <Link to="/summarize" state={{ valid: true }} className={`flex items-center space-x-1 font-medium text-purple-600 hover:text-purple-700 transition ${isActive('/summarize')}`}>
+              <Sparkles className="w-4 h-4" />
+              <span>AI Summarize</span>
             </Link>
           </div>
         </div>
