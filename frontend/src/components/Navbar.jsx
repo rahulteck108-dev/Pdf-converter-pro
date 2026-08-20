@@ -17,37 +17,17 @@ const Navbar = () => {
           </Link>
           
           <div className="hidden md:flex space-x-8">
-            <Link to="/merge" state={{ valid: true }} className={`flex items-center space-x-1 transition ${isActive('/merge')}`}>
+            <Link to="/" className={`flex items-center space-x-1 font-medium text-gray-700 hover:text-indigo-600 transition`}>
               <Layers className="w-4 h-4" />
-              <span>Merge PDF</span>
+              <span>All PDF Tools</span>
             </Link>
-            <Link to="/split" state={{ valid: true }} className={`flex items-center space-x-1 transition ${isActive('/split')}`}>
+            <Link to="/merge" state={{ valid: true }} className={`flex items-center space-x-1 font-medium text-gray-700 hover:text-indigo-600 transition ${isActive('/merge')}`}>
               <SplitSquareHorizontal className="w-4 h-4" />
-              <span>Split PDF</span>
-            </Link>
-            <Link to="/image-to-pdf" state={{ valid: true }} className={`flex items-center space-x-1 transition ${isActive('/image-to-pdf')}`}>
-              <ImageIcon className="w-4 h-4" />
-              <span>Image to PDF</span>
-            </Link>
-            <Link to="/extract-text" state={{ valid: true }} className={`flex items-center space-x-1 transition ${isActive('/extract-text')}`}>
-              <Type className="w-4 h-4" />
-              <span>Extract Text</span>
-            </Link>
-            <Link to="/rotate" state={{ valid: true }} className={`flex items-center space-x-1 transition ${isActive('/rotate')}`}>
-              <RotateCw className="w-4 h-4" />
-              <span>Rotate PDF</span>
-            </Link>
-            <Link to="/watermark" state={{ valid: true }} className={`flex items-center space-x-1 transition ${isActive('/watermark')}`}>
-              <PenTool className="w-4 h-4" />
-              <span>Watermark</span>
-            </Link>
-            <Link to="/word-to-pdf" state={{ valid: true }} className={`flex items-center space-x-1 transition ${isActive('/word-to-pdf')}`}>
-              <FileOutput className="w-4 h-4" />
-              <span>Word to PDF</span>
+              <span>Merge PDF</span>
             </Link>
             <Link to="/summarize" state={{ valid: true }} className={`flex items-center space-x-1 font-medium text-purple-600 hover:text-purple-700 transition ${isActive('/summarize')}`}>
               <Sparkles className="w-4 h-4" />
-              <span>AI Summarize</span>
+              <span>AI Summarize ✨</span>
             </Link>
           </div>
         </div>
