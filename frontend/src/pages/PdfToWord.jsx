@@ -22,7 +22,13 @@ const PdfToWord = () => {
       });
 
       if (!response.ok) {
-        const errData = await response.json();
+        let errData;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          errData = await response.json();
+        } else {
+          errData = { error: "Server returned an invalid response (HTML). Please restart your backend server." };
+        }
         throw new Error(errData.error || 'Failed to convert PDF to Word');
       }
 

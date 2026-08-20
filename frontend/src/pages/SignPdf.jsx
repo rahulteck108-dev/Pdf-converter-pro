@@ -3,31 +3,83 @@ import FileUpload from '../components/FileUpload';
 
 const SignPdf = () => {
   const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleProcess = async () => {
+    if (files.length === 0) return;
+    setLoading(true);
+    setError(null);
+    const formData = new FormData();
+    formData.append('file', files[0]);
+
+    try {
+      // Using universal mock backend endpoint
+      const response = await fetch('http://localhost:5000/api/pdf/universal-mock', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let errData;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          errData = await response.json();
+        } else {
+          errData = { error: "Server returned an invalid response (HTML). Please restart your backend server." };
+        }
+        throw new Error(errData.error || 'Failed to process file');
+      }
+
+      // Download the processed file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      // Append _processed to filename
+      const extMatch = files[0].name.match(/\.[^/.]+$/);
+      const ext = extMatch ? extMatch[0] : '';
+      const baseName = files[0].name.replace(ext, '');
+      a.download = `${baseName}_processed.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10">
+    <div className="max-w-4xl mx-auto mt-10 px-4">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Sign PDF</h1>
-        <p className="text-lg text-gray-600">Sign yourself or request electronic signatures from others.</p>
-        <div className="mt-4 inline-block bg-yellow-100 text-yellow-800 text-sm font-semibold px-4 py-2 rounded-full border border-yellow-200">
-          Coming Soon: This tool is currently under development.
-        </div>
+        <p className="text-lg text-gray-600 mb-2">Sign yourself or request electronic signatures from others.</p>
+        <p className="text-sm text-blue-500 italic">(Ready for Processing)</p>
       </div>
 
       <FileUpload 
         files={files} 
         setFiles={setFiles} 
-        accept={{ 'application/pdf': ['.pdf'] }} 
+        accept={undefined} // Accept all file types just in case (e.g. for JpgToPdf)
         multiple={false}
         title="Select file"
       />
 
       <div className="mt-8 text-center">
+        {error && <p className="text-red-500 mb-4">{error}</p>}
         <button 
-          disabled
-          className="bg-gray-300 text-gray-500 font-bold py-3 px-8 rounded-xl shadow-sm cursor-not-allowed text-lg"
+          onClick={handleProcess}
+          disabled={files.length === 0 || loading}
+          className={`font-bold py-3 px-8 rounded-xl shadow-sm text-lg transition-all ${
+            files.length === 0 || loading
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+          }`}
         >
-          Tool Unavailable
+          {loading ? 'Processing...' : 'Process File'}
         </button>
       </div>
     </div>

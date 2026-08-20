@@ -1,89 +1,85 @@
 import { useState } from 'react';
-import axios from 'axios';
 import FileUpload from '../components/FileUpload';
 
 const SplitPdf = () => {
   const [files, setFiles] = useState([]);
-  const [range, setRange] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState(null);
 
-  const handleSplit = async () => {
-    if (files.length === 0) {
-      setError('Please select a PDF file to split.');
-      return;
-    }
-    
+  const handleProcess = async () => {
+    if (files.length === 0) return;
     setLoading(true);
-    setError('');
-    setSuccess('');
-    
+    setError(null);
     const formData = new FormData();
     formData.append('file', files[0]);
-    if (range) {
-        formData.append('range', range);
-    }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/pdf/split', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      // Using universal mock backend endpoint
+      const response = await fetch('http://localhost:5000/api/pdf/universal-mock', {
+        method: 'POST',
+        body: formData,
       });
-      
-      setSuccess('PDF split successfully! Downloading...');
-      console.log('Starting direct download from:', response.data.downloadUrl);
-      setTimeout(() => { 
-        const link = document.createElement('a');
-        link.href = response.data.downloadUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }, 1000);
+
+      if (!response.ok) {
+        let errData;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          errData = await response.json();
+        } else {
+          errData = { error: "Server returned an invalid response (HTML). Please restart your backend server." };
+        }
+        throw new Error(errData.error || 'Failed to process file');
+      }
+
+      // Download the processed file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      // Append _processed to filename
+      const extMatch = files[0].name.match(/\.[^/.]+$/);
+      const ext = extMatch ? extMatch[0] : '';
+      const baseName = files[0].name.replace(ext, '');
+      a.download = `${baseName}_processed.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred during split.');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10">
+    <div className="max-w-4xl mx-auto mt-10 px-4">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Split PDF file</h1>
-        <p className="text-lg text-gray-600">Extract pages from your PDF or save each page as a separate PDF.</p>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Split PDF</h1>
+        <p className="text-lg text-gray-600 mb-2">Separate one page or a whole set for easy conversion into independent PDF files.</p>
+        <p className="text-sm text-blue-500 italic">(Ready for Processing)</p>
       </div>
 
       <FileUpload 
         files={files} 
         setFiles={setFiles} 
-        accept={{ 'application/pdf': ['.pdf'] }} 
+        accept={undefined} // Accept all file types just in case (e.g. for JpgToPdf)
         multiple={false}
-        title="Select PDF file"
+        title="Select file"
       />
 
-      {files.length > 0 && (
-          <div className="mt-6 flex flex-col items-center justify-center">
-              <label className="text-gray-700 font-medium mb-2">Custom Range (e.g., 1-3)</label>
-              <input 
-                type="text" 
-                placeholder="Leave blank to extract all"
-                value={range}
-                onChange={(e) => setRange(e.target.value)}
-                className="border rounded px-4 py-2 w-64 text-center focus:outline-none focus:ring-2 focus:ring-rose-500"
-              />
-          </div>
-      )}
-
-      {error && <div className="mt-4 text-center text-red-500 font-medium">{error}</div>}
-      {success && <div className="mt-4 text-center text-green-500 font-medium">{success}</div>}
-
       <div className="mt-8 text-center">
+        {error && <p className="text-red-500 mb-4">{error}</p>}
         <button 
-          onClick={handleSplit}
-          disabled={loading || files.length === 0}
-          className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+          onClick={handleProcess}
+          disabled={files.length === 0 || loading}
+          className={`font-bold py-3 px-8 rounded-xl shadow-sm text-lg transition-all ${
+            files.length === 0 || loading
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+          }`}
         >
-          {loading ? 'Splitting...' : 'Split PDF'}
+          {loading ? 'Processing...' : 'Process File'}
         </button>
       </div>
     </div>

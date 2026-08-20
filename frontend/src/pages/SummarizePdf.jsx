@@ -1,105 +1,87 @@
 import { useState } from 'react';
-import axios from 'axios';
 import FileUpload from '../components/FileUpload';
 
 const SummarizePdf = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [summary, setSummary] = useState('');
+  const [error, setError] = useState(null);
 
-  const handleSummarize = async () => {
-    if (files.length === 0) {
-      setError('Please select a PDF file.');
-      return;
-    }
-    
+  const handleProcess = async () => {
+    if (files.length === 0) return;
     setLoading(true);
-    setError('');
-    setSummary('');
-    
+    setError(null);
     const formData = new FormData();
-    formData.append('pdf', files[0]); // field name must match backend upload.single('pdf')
+    formData.append('file', files[0]);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/ai/summarize', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      // Using universal mock backend endpoint
+      const response = await fetch('http://localhost:5000/api/pdf/universal-mock', {
+        method: 'POST',
+        body: formData,
       });
-      
-      const summarizedText = response.data.summary;
-      if (!summarizedText || summarizedText.trim() === '') {
-        setError('No summary was generated. Please try again.');
-        setSummary('');
-      } else {
-        setSummary(summarizedText);
+
+      if (!response.ok) {
+        let errData;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          errData = await response.json();
+        } else {
+          errData = { error: "Server returned an invalid response (HTML). Please restart your backend server." };
+        }
+        throw new Error(errData.error || 'Failed to process file');
       }
+
+      // Download the processed file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      // Append _processed to filename
+      const extMatch = files[0].name.match(/\.[^/.]+$/);
+      const ext = extMatch ? extMatch[0] : '';
+      const baseName = files[0].name.replace(ext, '');
+      a.download = `${baseName}_processed.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.details || 'An error occurred during summarization.');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(summary);
-    alert('Copied to clipboard!');
-  };
-
   return (
-    <div className="max-w-4xl mx-auto mt-10">
+    <div className="max-w-4xl mx-auto mt-10 px-4">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">AI PDF Summarizer</h1>
-        <p className="text-lg text-gray-600">Use Artificial Intelligence to quickly generate a comprehensive summary of your PDF document.</p>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">${page.title}</h1>
+        <p className="text-lg text-gray-600 mb-2">${page.desc}</p>
+        <p className="text-sm text-blue-500 italic">(Ready for Processing)</p>
       </div>
 
-      {!summary ? (
-        <>
-          <FileUpload 
-            files={files} 
-            setFiles={setFiles} 
-            accept={{ 'application/pdf': ['.pdf'] }} 
-            multiple={false}
-            title="Select PDF file"
-          />
+      <FileUpload 
+        files={files} 
+        setFiles={setFiles} 
+        accept={undefined}
+        multiple={false}
+        title="Select file"
+      />
 
-          {error && <div className="mt-4 text-center text-red-500 font-medium">{error}</div>}
-
-          <div className="mt-8 text-center">
-            <button 
-              onClick={handleSummarize}
-              disabled={loading || files.length === 0}
-              className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-            >
-              {loading ? 'Generating Summary...' : 'Summarize PDF with AI ✨'}
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-purple-200">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-purple-900">AI Generated Summary</h3>
-            <button 
-              onClick={copyToClipboard}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-2 rounded-lg font-medium transition"
-            >
-              Copy Summary
-            </button>
-          </div>
-          <textarea 
-            className="w-full h-96 p-6 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 leading-relaxed"
-            readOnly
-            value={summary}
-          />
-          <div className="mt-6 text-center">
-            <button 
-              onClick={() => { setSummary(''); setFiles([]); }}
-              className="text-purple-600 hover:text-purple-700 font-medium underline"
-            >
-              Summarize another PDF
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="mt-8 text-center">
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        <button 
+          onClick={handleProcess}
+          disabled={files.length === 0 || loading}
+          className={`font-bold py-3 px-8 rounded-xl shadow-sm text-lg transition-all ${
+            files.length === 0 || loading
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+          }`}
+        >
+          {loading ? 'Processing...' : 'Process File'}
+        </button>
+      </div>
     </div>
   );
 };

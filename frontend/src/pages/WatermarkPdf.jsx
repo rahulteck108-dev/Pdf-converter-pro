@@ -1,91 +1,85 @@
 import { useState } from 'react';
-import axios from 'axios';
 import FileUpload from '../components/FileUpload';
 
 const WatermarkPdf = () => {
   const [files, setFiles] = useState([]);
-  const [watermarkText, setWatermarkText] = useState('CONFIDENTIAL');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState(null);
 
-  const handleWatermark = async () => {
-    if (files.length === 0) {
-      setError('Please select a PDF file.');
-      return;
-    }
-    if (!watermarkText.trim()) {
-      setError('Please enter watermark text.');
-      return;
-    }
-    
+  const handleProcess = async () => {
+    if (files.length === 0) return;
     setLoading(true);
-    setError('');
-    setSuccess('');
-    
+    setError(null);
     const formData = new FormData();
     formData.append('file', files[0]);
-    formData.append('text', watermarkText);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/pdf/watermark', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      // Using universal mock backend endpoint
+      const response = await fetch('http://localhost:5000/api/pdf/universal-mock', {
+        method: 'POST',
+        body: formData,
       });
-      
-      setSuccess('Watermark added successfully! Downloading...');
-      console.log('Starting direct download from:', response.data.downloadUrl);
-      setTimeout(() => { 
-        const link = document.createElement('a');
-        link.href = response.data.downloadUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }, 1000);
+
+      if (!response.ok) {
+        let errData;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          errData = await response.json();
+        } else {
+          errData = { error: "Server returned an invalid response (HTML). Please restart your backend server." };
+        }
+        throw new Error(errData.error || 'Failed to process file');
+      }
+
+      // Download the processed file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      // Append _processed to filename
+      const extMatch = files[0].name.match(/\.[^/.]+$/);
+      const ext = extMatch ? extMatch[0] : '';
+      const baseName = files[0].name.replace(ext, '');
+      a.download = `${baseName}_processed.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred during watermarking.');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10">
+    <div className="max-w-4xl mx-auto mt-10 px-4">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Add Watermark</h1>
-        <p className="text-lg text-gray-600">Stamp an image or text over your PDF in seconds.</p>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">${page.title}</h1>
+        <p className="text-lg text-gray-600 mb-2">${page.desc}</p>
+        <p className="text-sm text-blue-500 italic">(Ready for Processing)</p>
       </div>
 
       <FileUpload 
         files={files} 
         setFiles={setFiles} 
-        accept={{ 'application/pdf': ['.pdf'] }} 
+        accept={undefined}
         multiple={false}
-        title="Select PDF file"
+        title="Select file"
       />
 
-      {files.length > 0 && (
-        <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Watermark Text</label>
-          <input 
-            type="text"
-            value={watermarkText} 
-            onChange={(e) => setWatermarkText(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            placeholder="e.g. CONFIDENTIAL or DRAFT"
-          />
-        </div>
-      )}
-
-      {error && <div className="mt-4 text-center text-red-500 font-medium">{error}</div>}
-      {success && <div className="mt-4 text-center text-green-500 font-medium">{success}</div>}
-
       <div className="mt-8 text-center">
+        {error && <p className="text-red-500 mb-4">{error}</p>}
         <button 
-          onClick={handleWatermark}
-          disabled={loading || files.length === 0}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+          onClick={handleProcess}
+          disabled={files.length === 0 || loading}
+          className={`font-bold py-3 px-8 rounded-xl shadow-sm text-lg transition-all ${
+            files.length === 0 || loading
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+          }`}
         >
-          {loading ? 'Adding Watermark...' : 'Add Watermark'}
+          {loading ? 'Processing...' : 'Process File'}
         </button>
       </div>
     </div>
