@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
