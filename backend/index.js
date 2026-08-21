@@ -77,7 +77,7 @@ app.post('/api/pdf/to-word', upload.single('pdf'), async (req, res) => {
         properties: {},
         children: textParagraphs.map(text => 
           new Paragraph({
-            children: [new TextRun(text)],
+            children: [new TextRun({ text: text })],
           })
         ),
       }],
